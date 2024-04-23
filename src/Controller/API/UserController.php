@@ -1,4 +1,9 @@
 <?php
+require 'vendor/autoload.php';
+require_once PROJECT_ROOT_PATH . "/src/validators/documentValidator.php";
+
+use Ramsey\Uuid\Uuid;
+
 class UserController extends BaseController
 {
     /** 
@@ -15,18 +20,14 @@ class UserController extends BaseController
             try {
                 $userModel = new UserModel();
                 
-                $intLimit = 10;
-                if (isset($arrQueryStringParams["limit"]) && $arrQueryStringParams["limit"]) {
-                    $intLimit = $arrQueryStringParams["limit"];
-                }
-
+                $intLimit = isset($arrQueryStringParams["limit"]) ? $arrQueryStringParams["limit"] : 10;
                 $strType = isset($arrQueryStringParams["type"]) ? $arrQueryStringParams["type"] : null;
                 $strFormat = isset($arrQueryStringParams["format"]) ? $arrQueryStringParams["format"] : null;
-                
+
                 $arrUsers = $userModel->getDocuments($intLimit, $strType, $strFormat);
                 $responseData = json_encode($arrUsers);
             } catch (Error $e) {
-                $strErrorDesc = $e->getMessage() . "Something went wrong! Please contact support.";
+                $strErrorDesc = $e->getMessage() . " Something went wrong! Please contact support.";
                 $strErrorHeader = "HTTP/1.1 500 Internal Server Error";
             }
         } else {
@@ -70,7 +71,7 @@ class UserController extends BaseController
                 $arrDocument = $userModel->getDocument($intDocumentId);
                 $responseData = json_encode($arrDocument);
             } catch (Error $e) {
-                $strErrorDesc = $e->getMessage() . "Something went wrong! Please contact support.";
+                $strErrorDesc = $e->getMessage() . " Something went wrong! Please contact support.";
                 $strErrorHeader = "HTTP/1.1 500 Internal Server Error";
             }
         } else {
@@ -102,14 +103,17 @@ class UserController extends BaseController
         
         if (strtoupper($requestMethod) == "POST") {
             try {
-                $userModel = new UserModel();                
+                $userModel = new UserModel();
                 $objDocument = $this->getRequestBody("document");
+                $objDocument->documentId = Uuid::uuid4()->toString();
+
+                validateDocument($objDocument);
                 
                 $userModel->addDocument($objDocument);
-                $responseData = json_encode(array("message" => "Document added successfully"));
+                $responseData = json_encode(array("message" => "Document added successfully", "documentId" => $objDocument->documentId));
             } catch (Error $e) {
-                $strErrorDesc = $e->getMessage() . "Something went wrong! Please contact support.";
-                $strErrorHeader = "HTTP/1.1 500 Internal Server Error";
+                $strErrorDesc = $e->getMessage() . " Something went wrong! Please contact support.";
+                $strErrorHeader = "HTTP/1.1 500 Internal Server Error" . $e->getMessage();
             }
         } else {
             $strErrorDesc = "Method not supported";
@@ -119,7 +123,7 @@ class UserController extends BaseController
         if (!$strErrorDesc) {
             $this->sendOutput(
                 $responseData,
-                array("Content-Type: application/json","'HTTP/1.1 200 OK")
+                array("Content-Type: application/json","HTTP/1.1 200 OK")
             );
         } else {
             $this->sendOutput(
@@ -139,7 +143,7 @@ class UserController extends BaseController
         $requestMethod = $_SERVER["REQUEST_METHOD"];
         $arrQueryStringParams = $this->getQueryStringParams();
         
-        if (strtoupper($requestMethod) == "PUT") {
+        if (strtoupper($requestMethod) == "PATCH") {
             try {
                 $userModel = new UserModel();                
                 $objDocument = $this->getRequestBody("document");
@@ -150,10 +154,12 @@ class UserController extends BaseController
 
                 $intDocumentId = $arrQueryStringParams["documentId"];
 
+                validateDocument($objDocument);
+
                 $userModel->updateDocument($intDocumentId, $objDocument);
                 $responseData = json_encode(array("message" => "Document updated successfully"));
             } catch (Error $e) {
-                $strErrorDesc = $e->getMessage() . "Something went wrong! Please contact support.";
+                $strErrorDesc = $e->getMessage() . " Something went wrong! Please contact support.";
                 $strErrorHeader = "HTTP/1.1 500 Internal Server Error";
             }
         } else {
@@ -197,7 +203,7 @@ class UserController extends BaseController
                 $userModel->deleteDocument($intDocumentId);
                 $responseData = json_encode(array("message" => "Document deleted successfully"));
             } catch (Error $e) {
-                $strErrorDesc = $e->getMessage() . "Something went wrong! Please contact support.";
+                $strErrorDesc = $e->getMessage() . " Something went wrong! Please contact support.";
                 $strErrorHeader = "HTTP/1.1 500 Internal Server Error";
             }
         } else {
@@ -218,3 +224,4 @@ class UserController extends BaseController
         }
     }
 }
+?>

@@ -9,3 +9,4 @@ class Document {
     public $type;
     public $format;
 }
+?>

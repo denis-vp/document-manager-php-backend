@@ -15,11 +15,50 @@ class Database
         }
     }
 
-    public function execute($query = "", $params = [])
+    public function executeSelect($query = "", $params = [])
     {
         try {
             $stmt = $this->executeStatement($query, $params);
             $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+        return false;
+    }
+
+    public function executeInsert($query = "", $params = [])
+    {
+        try {
+            $stmt = $this->executeStatement($query, $params);
+            $result = $stmt->insert_id;
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+        return false;
+    }
+
+    public function executeUpdate($query = "", $params = [])
+    {
+        try {
+            $stmt = $this->executeStatement($query, $params);
+            $result = $stmt->affected_rows;
+            $stmt->close();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
+        return false;
+    }
+
+    public function executeDelete($query = "", $params = [])
+    {
+        try {
+            $stmt = $this->executeStatement($query, $params);
+            $result = $stmt->affected_rows;
             $stmt->close();
             return $result;
         } catch (Exception $e) {
@@ -35,13 +74,11 @@ class Database
             if ($stmt === false) {
                 throw new Exception("Unable to do prepared statement: " . $query);
             }
-            if ($params) {
-                $stmt->bind_param($params[0], $params[1]);
-            }
-            $stmt->execute();
+            $stmt->execute($params);
             return $stmt;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
     }
 }
+?>

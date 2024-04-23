@@ -28,7 +28,8 @@ class BaseController
      */
     protected function getQueryStringParams()
     {
-        return parse_str($_SERVER['QUERY_STRING'], $query);
+        parse_str($_SERVER['QUERY_STRING'], $query);
+        return $query;
     }
     
     /** 
@@ -48,4 +49,21 @@ class BaseController
         echo $data;
         exit;
     }
+
+    /** 
+     * Validate document. 
+     * 
+     * @param object $document 
+     * @throws Exception 
+     */
+    protected function getRequestBody($key)
+    {
+        $requestBody = file_get_contents('php://input');
+        $requestBody = json_decode($requestBody);
+        if (!isset($requestBody->$key)) {
+            throw new Exception("Invalid request body");
+        }
+        return $requestBody->$key;
+    }
 }
+?>
